@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="ru">
+    <meta charset="UTF-8">
+    <head>
+        <link rel="icon" type="image/ico" sizes="32x32" href="/static/favicon.ico">
+        <script src="https://code.jquery.com/jquery-3.3.1.min.js" type="text/javascript"></script>
+        {% load staticfiles %}
+
+        {% block customstatic %}
+        {% endblock %}
+
+        <title>
+            {% block title %}
+            {% endblock %}
+        </title>
+    </head>
+    <body>
+        {% csrf_token %}
+
+        {% block content %}
+        {% endblock %}
+    </body>
+</html>

@@ -1,0 +1,10 @@
+dictdiffer
+
+urllib3
+requests
+
+django==2.2.2
+djangorestframework==3.9.4
+python-telegram-bot==11.1.0
+phonenumbers==8.10.14
+django-mathfilters==0.4.0

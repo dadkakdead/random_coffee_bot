@@ -1,0 +1,255 @@
+{% extends 'base.html' %}
+
+{% block customstatic %}
+<script>
+    console.log({{meetings_obj}});
+
+    function getCookie(c_name) {
+        if (document.cookie.length > 0) {
+            c_start = document.cookie.indexOf(c_name + "=");
+            if (c_start != -1) {
+                c_start = c_start + c_name.length + 1;
+                c_end = document.cookie.indexOf(";", c_start);
+                if (c_end == -1) c_end = document.cookie.length;
+                return unescape(document.cookie.substring(c_start,c_end));
+            }
+        }
+        return "";
+    }
+
+    function request_to_shuffle_meetings(year, week) {
+        fetch("/api/shuffle_meetings", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json; charset=utf-8",
+            "X-CSRFToken": getCookie("csrftoken"),
+            "Credentials": "same-origin"
+          },
+          body: JSON.stringify({"year": year, "week": week, "ignore_time_flow": true})
+        }).then(resStream => {
+            if (resStream.status == 200) {
+                return resStream.json();
+            } else {
+                throw new Error();
+            }
+        }).then(res => {
+            if (Object.keys(res).includes("meetings")) {
+                message = `Удалось составить ${res.meetings.length} встреч.\n\n` +
+                `Приняли приглашение: ${Object.keys(res.profiles).length}\n` +
+                `Есть, кого посмотреть: ${res.has_more_people_to_meet}`;
+                console.log(res);
+                alert(message);
+                location.reload();
+            } else {
+                message = `Не получилось генерировать встречи на эту неделю.`;
+                alert(message);
+            }
+        }).catch(err => {
+            alert('Серверная ошибка. Чтобы узнать подробности, свяжитесь с технической поддержкой.')
+            console.log(err);
+        });
+    }
+
+    function connect_participants(year, week) {
+	alert("Будь готов к тому, что рассылка занимает 2 секунды на участника. Придется немного подождать.");
+
+        fetch("/api/connect_participants", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json; charset=utf-8",
+            "X-CSRFToken": getCookie("csrftoken"),
+            "Credentials": "same-origin"
+          },
+          body: JSON.stringify({"year": year, "week": week})
+        }).then(resStream => {
+            if (resStream.status == 200) {
+                return resStream.json();
+            } else {
+                throw new Error();
+            }
+        }).then(res => {
+            message = `Рассылка сделана.`;
+            alert(message);
+            location.reload();
+        }).catch(err => {
+            alert('Серверная ошибка. Чтобы узнать подробности, свяжитесь с технической поддержкой.')
+            console.log(err);
+        });
+    }
+
+    function resend_invitation(user_id, year, week) {
+        fetch("/api/resend_invitation", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json; charset=utf-8",
+            "X-CSRFToken": getCookie("csrftoken"),
+            "Credentials": "same-origin"
+          },
+          body: JSON.stringify({"user_telegram_id": user_id, "year": year, "week": week})
+        }).then(resStream => {
+            if (resStream.status == 200) {
+                return resStream.json();
+            } else {
+                throw new Error();
+            }
+        }).then(res => {
+            message = `Приглашение отправлено.`;
+            alert(message);
+            location.reload();
+        }).catch(err => {
+            alert('Серверная ошибка. Чтобы узнать подробности, свяжитесь с технической поддержкой.')
+            console.log(err);
+        });
+    }
+
+    function collect_feedback(user_1_telegram_id, user_2_telegram_id, year, week) {
+        fetch("/api/collect_feedback", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json; charset=utf-8",
+            "X-CSRFToken": getCookie("csrftoken"),
+            "Credentials": "same-origin"
+          },
+          body: JSON.stringify({"user_1_telegram_id": user_1_telegram_id, "user_2_telegram_id": user_2_telegram_id, "year": year, "week": week})
+        }).then(resStream => {
+            if (resStream.status == 200) {
+                return resStream.json();
+            } else {
+                throw new Error();
+            }
+        }).then(res => {
+            message = `Запрос на фидбек отправлен.`;
+            alert(message);
+            location.reload();
+        }).catch(err => {
+            alert('Серверная ошибка. Чтобы узнать подробности, свяжитесь с технической поддержкой.')
+            console.log(err);
+        });
+    }
+</script>
+{% endblock %}
+
+{% block title %}Random Coffee{% endblock %}
+
+{% block content %}
+
+
+    <div style="">
+        <div style="font-size:24pt"> Random Coffee START HUB</div>
+        <div style="">
+            <b>Неделя {{timestamps.now.week}}, {{ timestamps.now.day_from|date:'d.m.y' }} - {{ timestamps.now.day_to|date:'d.m.y' }}</b>
+
+            &nbsp&nbsp&nbsp
+
+            <a href="/schedule?week={{timestamps.week_ago.week}}&year={{timestamps.week_ago.year}}">
+                <--
+            </a>
+
+            &nbsp&nbsp|&nbsp&nbsp
+
+            <a href="/schedule?week={{timestamps.week_after.week}}&year={{timestamps.week_after.year}}">
+                -->
+            </a>
+        </div>
+    </div>
+
+    <h2>Статистика</h2>
+
+    <div style='font-size:8pt'>
+        <table>
+            <tr>
+                <td style='border: 0.5px solid grey; padding: 5px 10px;'>
+                    <b>Пол</b>
+                    <il>
+                        <li>Мальчики: {{statistics.gender.male}}</li>
+                        <li>Девочки: {{statistics.gender.female}} </li>
+                    </il>
+                </td>
+                <td style='border: 1px solid grey; padding: 5px 10px;'>
+                    <b>Активность</b>
+                    <il>
+                        <li>2 раза в неделю: {{statistics.frequency.high}}</li>
+                        <li>1 раз в неделю: {{statistics.frequency.medium}}</li>
+                        <li>1 раз в 2 недели: {{statistics.frequency.low}}</li>
+                    </il>
+                </td>
+                <td style='border: 1px solid grey; padding: 5px 10px;'>
+                    <b>Мотивация</b>
+                    <il>
+                        <li>Найти вторую половину: {{statistics.motivation.dating}}</li>
+                        <li>Поговорить о работе: {{statistics.motivation.networking}}</li>
+                        <li>Просто отдохнуть: {{statistics.motivation.fun}}</li>
+                    </il>
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <h2>Участники</h2>
+
+    {% for category_name, users_list in users.items %}
+        {% if users_list|length > 0 %}
+            {% if category_name == "accepted" %}<b style="color: green"> Приняли приглашение </b>{% endif %}
+            {% if category_name == "thinking" %}<b style="color: orange"> Думают над приглашением </b>{% endif %}
+            {% if category_name == "declined" %}<b style="color: red"> Отклонили приглашение </b>{% endif %}
+            {% if category_name == "awaiting_invitation" %}Не получили приглашение {% endif %}
+            {% if category_name == "awaiting_registration" %}Не закончили регистрацию {% endif %}
+            {% if category_name == "disabled" %}Заблокированы администратором {% endif %}
+            {% if category_name == "undefined" %}В неопределенном статусе {% endif %}
+            ({{users_list|length}} / {{total_users}})
+
+            <table>
+                <tr>
+                    <td>
+                        <ul>
+                        {% for u in users_list %}
+                            <li>{{u.1}}{% if u.2 != ''%}, {{u.2}}{% endif %} ({{u.3}}) &nbsp&nbsp
+                                {% if category_name != "awaiting_registration" and category_name != "undefined" and category_name != "disabled" %}
+                                    <button onclick="resend_invitation({{u.0}}, {{timestamps.now.year}}, {{timestamps.now.week}})">Пригласить снова</button>
+                                 {% endif %}
+                            </li>
+                        {% endfor %}
+                        </ul>
+                    </td>
+                </tr>
+            </table>
+        {% endif %}
+    {% endfor %}
+
+
+    <h2>Встречи</h2>
+
+    {% if meetings|length == 0%}
+        <ul>
+            Встречи не назначены или отсутствуют.
+        </ul>
+        <button onclick="request_to_shuffle_meetings({{timestamps.now.year}}, {{timestamps.now.week}})">Назначить</button>
+    {% else %}
+        <ul>
+        {% for m in meetings %}
+            <li>
+                {{m.0.1}}{% if m.0.2 != ''%}, {{m.0.2}} {% endif %} — {{m.1.1}}{% if m.1.2 != ''%}, {{m.1.2}} {% endif %} <b>|</b>
+                {% if m.2 %}
+                    Встреча прошла  {% if m.3 %} 😄 {% else %} 😔 {% endif%}
+                {% else %}
+                    Встречи не было
+                {% endif%}
+                {% if meeting_details_broadcasted %}
+                    <button onclick="collect_feedback({{m.0.0}}, {{m.1.0}}, {{timestamps.now.year}}, {{timestamps.now.week}})">Запросить фидбек</button>
+                {% endif %}
+            </li>
+        {% endfor %}
+        </ul>
+        {% if not meeting_details_broadcasted %}
+            <button onclick="request_to_shuffle_meetings({{timestamps.now.year}}, {{timestamps.now.week}})">Перемешать</button>
+        {% endif %}
+    {% endif %}
+    <br><br>
+    {% if meetings|length > 0%}
+        {% if not meeting_details_broadcasted %}
+            <button style="background-color: #f44336; color:white" onclick="connect_participants({{timestamps.now.year}}, {{timestamps.now.week}})">Разослать информацию о встречах</button>
+            Кнопку можно нажать всего один раз.
+        {% endif %}
+    {% endif %}
+
+{% endblock %}
