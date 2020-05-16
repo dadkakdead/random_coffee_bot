@@ -523,9 +523,6 @@ class UserProfileState(DialogState):
         if update.callback_query.data == 'profile_edit_meeting_motivation':
             self.dialog.transition_to(EditMeetingsMotivationState(params={'stop_after_finish':True}))
 
-
-
-
     def handle_leaving_state(self, silent_enter=False) -> None:
         if silent_enter: return
 
@@ -890,6 +887,7 @@ class WelcomeNewUserState(DialogState):
                 ],
                 one_time_keyboard=True
             )
+            #TODO: convert to fall_back
             self.dialog.send_message(
                 text=("Не совсем тебя понял. Ты хотел зарегистрироваться? Тогда просто нажми кнопку внизу."),
                 reply_markup=reply_markup
@@ -1096,7 +1094,7 @@ class EditLastNameState(DialogState):
 
     def handle_message(self, update) -> None:
         if self.context['params']['stage'] == self.__AWAITING_INPUT:
-            if update.message.text == 'Оставить поле пустым':
+            if update.message.text == 'Пропустить':
                 self.dialog.user.last_name = ''
                 self.dialog.user.save()
                 if not self.context['params']['stop_after_finish']:
@@ -1227,7 +1225,7 @@ class EditPhoneNumberState(DialogState):
 
 
 class EditCompanyState(DialogState):
-    __MAX_GROUPS_ON_SCREEN = 3
+    __MAX_GROUPS_ON_SCREEN = 5
     __AWAITING_TYPE, __AWAITING_SELECT_GROUP, __AWAITING_INPUT = range(3)
 
     def __init__(self, params={}):
